@@ -3,12 +3,16 @@ import random
 import string
 from supabase import create_client, Client
 
-# Initialize Supabase Client
-url = st.secrets["supabase"]["url"]
-key = st.secrets["supabase"]["key"]
-supabase: Client = create_client(url, key)
-
 class Bank:
+    # Initialize Supabase Client
+    # Expects st.secrets["supabase"]["url"] and st.secrets["supabase"]["key"]
+    
+    @staticmethod
+    def _get_client() -> Client:
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["key"]
+        return create_client(url, key)
+
     @classmethod
     def init_db(cls):
         """
@@ -44,33 +48,34 @@ class Bank:
             return None, "Age must be 18+ and PIN should be 4 digits"
         
         acc_no = cls.generate_account_number()
-        
+        user_data = {
+            "name": name,
+            "age": age,
+            "email": email,
+            "pin": int(pin),
+            "account_number": acc_no,
+            "balance": 0
+        }
+
         try:
-            user_data = {
-                "account_number": acc_no,
-                "name": name,
-                "age": age,
-                "email": email,
-                "pin": int(pin),
-                "balance": 0
-            }
+            supabase = cls._get_client()
             response = supabase.table("users").insert(user_data).execute()
-            
-            # Check for success (response.data should be a list with the inserted row)
+            # Check if insertion was successful (response.data should not be empty)
             if response.data:
-                # Map back to app structure
-                user = response.data[0]
-                user['accountNo.'] = user['account_number']
-                return user, "Account created successfully"
+                 user = response.data[0]
+                 # Compatibility with app.py expectation
+                 user['accountNo.'] = user['account_number']
+                 return user, "Account created successfully"
             else:
-                return None, "Failed to create account (No data returned)"
-                
+                 return None, "Failed to create account (No data returned)"
+
         except Exception as e:
-            return None, f"Error: {e}"
+            return None, f"Error creating account: {str(e)}"
 
     @classmethod
     def find_user(cls, acc_no, pin):
         try:
+            supabase = cls._get_client()
             response = supabase.table("users").select("*") \
                 .eq("account_number", acc_no) \
                 .eq("pin", int(pin)) \
