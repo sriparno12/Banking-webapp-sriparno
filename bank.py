@@ -51,8 +51,21 @@ class Bank:
     # Placeholder/Legacy methods - needing update for full DB support
     @classmethod
     def find_user(cls, acc_no, pin):
-        # TODO: Update to fetch from Supabase
-        pass
+        try:
+            supabase = cls._get_client()
+            response = supabase.table("users").select("*") \
+                .eq("account_number", acc_no) \
+                .eq("pin", int(pin)) \
+                .execute()
+            
+            if response.data:
+                user = response.data[0]
+                user['accountNo.'] = user['account_number']
+                return user
+            return None
+        except Exception as e:
+            print(f"Supabase Error: {e}")
+            return None
 
     @classmethod
     def deposit(cls, acc_no, pin, amount):
@@ -61,8 +74,42 @@ class Bank:
 
     @classmethod
     def withdraw(cls, acc_no, pin, amount):
-         # TODO: Update to update Supabase
-        pass
+        if amount <= 0:
+             return False, "Amount must be positive"
+             
+        try:
+            supabase = cls._get_client()
+            # 1. Fetch current balance (Atomic check start)
+            # We fetch using account_number and PIN to verify owner
+            response = supabase.table("users").select("*") \
+                .eq("account_number", acc_no) \
+                .eq("pin", int(pin)) \
+                .execute()
+            
+            if not response.data:
+                return False, "Invalid Account Number or PIN"
+            
+            user = response.data[0]
+            current_balance = user['balance']
+            
+            # 2. Check sufficient funds
+            if current_balance < amount:
+                return False, "Insufficient Funds"
+                
+            # 3. Update balance
+            new_balance = current_balance - amount
+            update_response = supabase.table("users") \
+                .update({"balance": new_balance}) \
+                .eq("account_number", acc_no) \
+                .execute()
+            
+            if update_response.data:
+                return True, f"Withdrawal Successful! New Balance: ₹ {new_balance}"
+            else:
+                return False, "Transaction Failed (Database Error)"
+                
+        except Exception as e:
+            return False, f"Error processing withdrawal: {str(e)}"
 
     @classmethod
     def update_user(cls, acc_no, pin, name=None, email=None, new_pin=None):
