@@ -115,12 +115,15 @@ elif menu == "Withdraw":
         user = st.session_state.user
         st.write(f"Withdrawing from Account: **{user['accountNo.']}**")
         st.info(f"Current Balance: ₹ {user['balance']}")
-        amount = st.number_input("Amount to Withdraw", min_value=1)
+        
+        # S5: Use st.number_input with step increments (e.g., 100, 500)
+        amount = st.number_input("Amount to Withdraw", min_value=1, step=100)
         
         if st.button("Withdraw"):
             success, msg = Bank.withdraw(user['accountNo.'], user['pin'], int(amount))
             if success:
                 st.success(msg)
+                # S5: Display new remaining balance immediately (Update Session)
                 updated_user = Bank.find_user(user['accountNo.'], user['pin'])
                 if updated_user:
                     st.session_state.user = updated_user
