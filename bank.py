@@ -1,23 +1,17 @@
-import json
 import random
 import string
-from pathlib import Path
-
+import streamlit as st
+from supabase import create_client, Client
 
 class Bank:
-    database = 'data.json'
-
-    @classmethod
-    def load_data(cls):
-        if Path(cls.database).exists():
-            with open(cls.database, 'r') as fs:
-                return json.load(fs)
-        return []
-
-    @classmethod
-    def save_data(cls, data):
-        with open(cls.database, 'w') as fs:
-            json.dump(data, fs, indent=4)
+    # Initialize Supabase Client
+    # Expects st.secrets["SUPABASE_URL"] and st.secrets["SUPABASE_KEY"]
+    
+    @staticmethod
+    def _get_client() -> Client:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+        return create_client(url, key)
 
     @classmethod
     def generate_account_number(cls):
@@ -29,73 +23,54 @@ class Bank:
 
     @classmethod
     def create_account(cls, name, age, email, pin):
-        data = cls.load_data()
         if age < 18 or len(str(pin)) != 4:
             return None, "Age must be 18+ and PIN should be 4 digits"
+        
         acc_no = cls.generate_account_number()
-        user = {
+        user_data = {
             "name": name,
             "age": age,
             "email": email,
             "pin": pin,
-            "accountNo.": acc_no,
+            "account_number": acc_no,
             "balance": 0
         }
-        data.append(user)
-        cls.save_data(data)
-        return user, "Account created successfully"
 
+        try:
+            supabase = cls._get_client()
+            response = supabase.table("users").insert(user_data).execute()
+            # Check if insertion was successful (response.data should not be empty)
+            if response.data:
+                 return {"accountNo.": acc_no}, "Account created successfully" # Returning dict with key expected by app.py
+            else:
+                 return None, "Failed to create account (No data returned)"
+
+        except Exception as e:
+            return None, f"Error creating account: {str(e)}"
+
+    # Placeholder/Legacy methods - needing update for full DB support
     @classmethod
     def find_user(cls, acc_no, pin):
-        data = cls.load_data()
-        for user in data:
-            if user['accountNo.'] == acc_no and user['pin'] == pin:
-                return user
-        return None
+        # TODO: Update to fetch from Supabase
+        pass
 
     @classmethod
     def deposit(cls, acc_no, pin, amount):
-        data = cls.load_data()
-        for user in data:
-            if user['accountNo.'] == acc_no and user['pin'] == pin:
-                if 0 < amount <= 10000:
-                    user['balance'] += amount
-                    cls.save_data(data)
-                    return True, "Deposit successful"
-                return False, "Amount must be between 1 and 10000"
-        return False, "Invalid account or PIN"
+         # TODO: Update to update Supabase
+        pass
 
     @classmethod
     def withdraw(cls, acc_no, pin, amount):
-        data = cls.load_data()
-        for user in data:
-            if user['accountNo.'] == acc_no and user['pin'] == pin:
-                if user['balance'] >= amount:
-                    user['balance'] -= amount
-                    cls.save_data(data)
-                    return True, "Withdrawal successful"
-                return False, "Insufficient balance"
-        return False, "Invalid account or PIN"
+         # TODO: Update to update Supabase
+        pass
 
     @classmethod
     def update_user(cls, acc_no, pin, name=None, email=None, new_pin=None):
-        data = cls.load_data()
-        for user in data:
-            if user['accountNo.'] == acc_no and user['pin'] == pin:
-                user['name'] = name or user['name']
-                user['email'] = email or user['email']
-                user['pin'] = int(new_pin) if new_pin else user['pin']
-                cls.save_data(data)
-                return True, "User details updated"
-        return False, "User not found"
+         # TODO: Update to update Supabase
+        pass
 
     @classmethod
     def delete_user(cls, acc_no, pin):
-        data = cls.load_data()
-        for i, user in enumerate(data):
-            if user['accountNo.'] == acc_no and user['pin'] == pin:
-                data.pop(i)
-                cls.save_data(data)
-                return True, "Account deleted"
-        return False, "Account not found"
+         # TODO: Update to delete from Supabase
+        pass
 

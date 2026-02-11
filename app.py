@@ -10,20 +10,28 @@ menu = st.sidebar.selectbox(
 )
 
 if menu == "Create Account":
-    st.subheader("👤 Create New Account")
-    name = st.text_input("Your Name")
-    age = st.number_input("Your Age", min_value=0, step=1)
-    email = st.text_input("Your Email")
-    pin = st.text_input("4-digit PIN", type="password")
+    with st.form("create_account_form"):
+        st.subheader("👤 Create New Account")
+        name = st.text_input("Your Name")
+        age = st.number_input("Your Age", min_value=0, step=1)
+        email = st.text_input("Your Email")
+        pin = st.text_input("4-digit PIN", type="password")
+        
+        submitted = st.form_submit_button("Create Account")
 
-    if st.button("Create"):
+    if submitted:
         if name and email and pin:
-            user, msg = Bank.create_account(name, int(age), email, int(pin))
-            if user:
-                st.success(msg)
-                st.info(f"Your Account Number: {user['accountNo.']}")
+            if age < 18:
+                st.warning("You must be at least 18 years old to create an account.")
+            elif len(pin) != 4 or not pin.isdigit():
+                st.warning("PIN must be exactly 4 digits.")
             else:
-                st.error(msg)
+                user, msg = Bank.create_account(name, int(age), email, int(pin))
+                if user:
+                    st.success(msg)
+                    st.code(user['accountNo.'], language="text")
+                else:
+                    st.error(msg)
         else:
             st.warning("Fill all fields")
 
