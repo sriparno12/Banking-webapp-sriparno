@@ -125,5 +125,6 @@ By default, the app runs locally at:
 
 ## 👨‍💻 Author
 
-Developed by **Pruthviraj Chavan** ✨  
-🔗 [GitHub Profile](https://github.com/PruthvirajChavan45)
+Developed and modified by Sriparno Chowdhury
+linkedin: https://www.linkedin.com/in/sriparno-chowdhury-92a58416a/
+
